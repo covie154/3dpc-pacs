@@ -172,11 +172,9 @@ Note: multipart form upload is not supported — use the JSON + Base64 pattern a
 
 ## Known Limitations
 
-- **SQLite concurrency:** Both Orthanc instances write to the same SQLite file. Concurrent writes under heavy load may produce `SQLITE_BUSY` errors. Replace with PostgreSQL (`ORTHANC__POSTGRESQL__*` env vars) if this becomes a problem.
 - **DICOM port is unauthenticated:** Standard DICOM has no strong auth mechanism. Restrict access by IP at the firewall level, or enable `DicomCheckCalledAet` and whitelist AE titles in `config/orthanc/orthanc.json`.
 
 ## Future Work
 
-- **PostgreSQL** — replace SQLite for production concurrent access
 - **Keycloak SSO** — drop-in replacement for standalone auth-service user management
 - **NIfTI/NRRD upload** — `EnableNIfTI: true` already handles NIfTI→STL conversion; NRRD requires a pre-upload conversion step

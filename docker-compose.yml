@@ -31,6 +31,24 @@ services:
       - certbot-conf:/etc/letsencrypt
     # Default entrypoint is fine; invoked on-demand via `docker compose run`.
 
+  # ── PostgreSQL index DB ────────────────────────────────────────────────────
+  # Both Orthanc instances share this DB for metadata. Actual DICOM files
+  # live on the orthanc-storage volume; PostgreSQL stores the index only.
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: orthanc
+      POSTGRES_USER: orthanc
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orthanc"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   # ── Main Orthanc (staff-facing) ────────────────────────────────────────────
   orthanc:
     image: orthancteam/orthanc:latest-full
@@ -47,11 +65,21 @@ services:
       ORTHANC__AUTHORIZATION__WEB_SERVICE_PASSWORD: "${AUTH_SERVICE_WEB_PASSWORD}"
       # Used for ${PUBLIC_OHIF_ROOT} substitution inside orthanc.json
       PUBLIC_OHIF_ROOT: "${PUBLIC_OHIF_ROOT}"
+      # PostgreSQL index (replaces SQLite; fixes concurrent-access errors)
+      ORTHANC__POSTGRESQL__HOST: postgres
+      ORTHANC__POSTGRESQL__DATABASE: orthanc
+      ORTHANC__POSTGRESQL__USERNAME: orthanc
+      ORTHANC__POSTGRESQL__PASSWORD: "${POSTGRES_PASSWORD}"
+      ORTHANC__POSTGRESQL__ENABLE_INDEX: "true"
+      ORTHANC__POSTGRESQL__ENABLE_STORAGE: "false"
     volumes:
       - ./config/orthanc/orthanc.json:/etc/orthanc/orthanc.json:ro
       - orthanc-storage:/var/lib/orthanc/db
     depends_on:
-      - orthanc-auth-service
+      postgres:
+        condition: service_healthy
+      orthanc-auth-service:
+        condition: service_started
 
   # ── Shares Orthanc (token-gated, no login required) ───────────────────────
   orthanc-for-shares:
@@ -60,11 +88,21 @@ services:
     # No published ports — reachable only via nginx
     environment:
       ORTHANC__AUTHORIZATION__WEB_SERVICE_PASSWORD: "${AUTH_SERVICE_WEB_PASSWORD}"
+      # PostgreSQL index (same DB as main instance)
+      ORTHANC__POSTGRESQL__HOST: postgres
+      ORTHANC__POSTGRESQL__DATABASE: orthanc
+      ORTHANC__POSTGRESQL__USERNAME: orthanc
+      ORTHANC__POSTGRESQL__PASSWORD: "${POSTGRES_PASSWORD}"
+      ORTHANC__POSTGRESQL__ENABLE_INDEX: "true"
+      ORTHANC__POSTGRESQL__ENABLE_STORAGE: "false"
     volumes:
       - ./config/orthanc-shares/orthanc.json:/etc/orthanc/orthanc.json:ro
-      - orthanc-storage:/var/lib/orthanc/db   # shared storage with main instance
+      - orthanc-storage:/var/lib/orthanc/db   # shared DICOM file storage
     depends_on:
-      - orthanc-auth-service
+      postgres:
+        condition: service_healthy
+      orthanc-auth-service:
+        condition: service_started
 
   # ── Auth service (token issue + validation) ────────────────────────────────
   orthanc-auth-service:
@@ -86,5 +124,6 @@ services:
 
 volumes:
   orthanc-storage:
+  postgres-data:
   certbot-www:
   certbot-conf:
