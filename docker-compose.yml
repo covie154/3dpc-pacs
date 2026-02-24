@@ -37,6 +37,10 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    # Raise max_connections above the default 100.
+    # Each Orthanc instance uses a pool of ORTHANC__POSTGRESQL__CONNECTIONS_COUNT
+    # connections (set to 10 below). Two instances = 20, plus a few for psql/admin.
+    command: postgres -c max_connections=50
     environment:
       POSTGRES_DB: orthanc
       POSTGRES_USER: orthanc
@@ -72,6 +76,7 @@ services:
       ORTHANC__POSTGRESQL__PASSWORD: "${POSTGRES_PASSWORD}"
       ORTHANC__POSTGRESQL__ENABLE_INDEX: "true"
       ORTHANC__POSTGRESQL__ENABLE_STORAGE: "false"
+      ORTHANC__POSTGRESQL__CONNECTIONS_COUNT: "10"
     volumes:
       - ./config/orthanc/orthanc.json:/etc/orthanc/orthanc.json:ro
       - orthanc-storage:/var/lib/orthanc/db
@@ -95,6 +100,7 @@ services:
       ORTHANC__POSTGRESQL__PASSWORD: "${POSTGRES_PASSWORD}"
       ORTHANC__POSTGRESQL__ENABLE_INDEX: "true"
       ORTHANC__POSTGRESQL__ENABLE_STORAGE: "false"
+      ORTHANC__POSTGRESQL__CONNECTIONS_COUNT: "10"
     volumes:
       - ./config/orthanc-shares/orthanc.json:/etc/orthanc/orthanc.json:ro
       - orthanc-storage:/var/lib/orthanc/db   # shared DICOM file storage
