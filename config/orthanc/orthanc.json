@@ -43,5 +43,14 @@
 
   "STL": {
     "EnableNIfTI": true
+  },
+
+  "PostgreSQL": {
+    "EnableIndex": true,
+    "EnableStorage": false,
+    "Host": "postgres",
+    "Database": "orthanc",
+    "Username": "orthanc",
+    "ConnectionsCount": 10
   }
 }
