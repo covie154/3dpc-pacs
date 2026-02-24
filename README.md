@@ -23,11 +23,11 @@ Two Orthanc instances share the same storage volume. The main instance handles a
 
 | Service | Image | Role |
 |---|---|---|
-| `nginx` | `orthancteam/orthanc-nginx:current` | HTTPS reverse proxy, ACME challenge |
+| `nginx` | `orthancteam/orthanc-nginx:latest` | HTTPS reverse proxy, ACME challenge |
 | `certbot` | `certbot/certbot:latest` | Let's Encrypt cert issuance/renewal |
-| `orthanc` | `orthancteam/orthanc:current` | Main PACS (OHIF + STL + OE2 + auth) |
-| `orthanc-for-shares` | `orthancteam/orthanc:current` | Anonymous share access |
-| `orthanc-auth-service` | `orthancteam/orthanc-auth-service:current` | Token issue + validation |
+| `orthanc` | `orthancteam/orthanc:latest-full` | Main PACS (OHIF + STL + OE2 + auth) |
+| `orthanc-for-shares` | `orthancteam/orthanc:latest-full` | Anonymous share access |
+| `orthanc-auth-service` | `orthancteam/orthanc-auth-service:latest` | Token issue + validation |
 
 ## File Structure
 
