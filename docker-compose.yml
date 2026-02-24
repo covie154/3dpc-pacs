@@ -19,6 +19,7 @@ services:
     volumes:
       - certbot-www:/var/www/certbot:ro
       - certbot-conf:/etc/letsencrypt:ro
+      - ./config/nginx/cors.conf:/etc/nginx/conf.d/cors.conf:ro
     depends_on:
       - orthanc
       - orthanc-for-shares
@@ -39,7 +40,7 @@ services:
     restart: unless-stopped
     # Each Orthanc instance opens a pool of 10 connections (set in orthanc.json).
     # Two instances = 20, plus a few for psql/admin. 100 gives ample headroom.
-    command: postgres -c max_connections=100
+    command: postgres -c max_connections=200
     environment:
       POSTGRES_DB: orthanc
       POSTGRES_USER: orthanc
