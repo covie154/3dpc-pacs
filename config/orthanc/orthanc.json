@@ -1,0 +1,47 @@
+{
+  "Name": "3dpc-PACS",
+  "DicomAet": "3DPCPACS",
+  "DicomPort": 4242,
+  "DicomCheckCalledAet": false,
+
+  "HttpServerEnabled": true,
+  "HttpPort": 8042,
+
+  "StorageDirectory": "/var/lib/orthanc/db",
+  "IndexDirectory": "/var/lib/orthanc/db",
+
+  "AuthenticationEnabled": true,
+  "RegisteredUsers": {},
+
+  "OrthancExplorer2": {
+    "IsDefaultUI": true,
+    "UiOptions": {
+      "EnableShares": true,
+      "ShareDurations": [0, 7, 30, 90, 365],
+      "EnableOpenInOhifViewer3": true,
+      "OhifViewer3PublicRoot": "${PUBLIC_OHIF_ROOT}"
+    },
+    "Tokens": {
+      "ShareType": "ohif-viewer-publication"
+    }
+  },
+
+  "Authorization": {
+    "WebServiceTokenCreationBaseUrl": "http://orthanc-auth-service:8000/tokens/",
+    "WebServiceUsername": "share-user",
+    "WebServicePassword": ""
+  },
+
+  "DicomWeb": {
+    "Enable": true,
+    "PublicRoot": "/orthanc/dicom-web/"
+  },
+
+  "OHIF": {
+    "DataSource": "dicom-web"
+  },
+
+  "STL": {
+    "EnableNIfTI": true
+  }
+}

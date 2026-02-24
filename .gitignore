@@ -1,0 +1,13 @@
+# Secrets — never commit
+.env
+
+# Let's Encrypt certificates (bind-mounted; managed by certbot)
+certbot/
+
+# Docker volumes (if accidentally materialised locally)
+orthanc-storage/
+
+# Editor noise
+.DS_Store
+*.swp
+*~

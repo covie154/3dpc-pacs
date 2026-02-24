@@ -1,0 +1,89 @@
+services:
+
+  # ── TLS reverse proxy ──────────────────────────────────────────────────────
+  nginx:
+    image: orthancteam/orthanc-nginx:current
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      ENABLE_HTTPS: "true"
+      # Tell the nginx image which upstream paths belong to which backend.
+      # orthancteam/orthanc-nginx conventions:
+      ORTHANC_ROOT: /orthanc/
+      ORTHANC_PEER_1_ROOT: /shares/
+      ORTHANC_PEER_1_HOST: orthanc-for-shares
+      ORTHANC_PEER_1_PORT: "8042"
+    volumes:
+      - certbot-www:/var/www/certbot:ro
+      - certbot-conf:/etc/letsencrypt:ro
+    depends_on:
+      - orthanc
+      - orthanc-for-shares
+
+  # ── Let's Encrypt cert management ─────────────────────────────────────────
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - certbot-www:/var/www/certbot
+      - certbot-conf:/etc/letsencrypt
+    # Default entrypoint is fine; invoked on-demand via `docker compose run`.
+
+  # ── Main Orthanc (staff-facing) ────────────────────────────────────────────
+  orthanc:
+    image: orthancteam/orthanc:current
+    restart: unless-stopped
+    ports:
+      - "4242:4242"   # DICOM — open to the network
+      # 8042 is NOT published; nginx proxies internally
+    environment:
+      # Registered user injected as env var so the password never lives in
+      # a config file that might be committed.
+      ORTHANC__REGISTERED_USERS: |
+        {"${ORTHANC_ADMIN_USER}": "${ORTHANC_ADMIN_PASSWORD}"}
+      # Auth-service shared secret
+      ORTHANC__AUTHORIZATION__WEB_SERVICE_PASSWORD: "${AUTH_SERVICE_WEB_PASSWORD}"
+      # Used for ${PUBLIC_OHIF_ROOT} substitution inside orthanc.json
+      PUBLIC_OHIF_ROOT: "${PUBLIC_OHIF_ROOT}"
+    volumes:
+      - ./config/orthanc/orthanc.json:/etc/orthanc/orthanc.json:ro
+      - orthanc-storage:/var/lib/orthanc/db
+    depends_on:
+      - orthanc-auth-service
+
+  # ── Shares Orthanc (token-gated, no login required) ───────────────────────
+  orthanc-for-shares:
+    image: orthancteam/orthanc:current
+    restart: unless-stopped
+    # No published ports — reachable only via nginx
+    environment:
+      ORTHANC__AUTHORIZATION__WEB_SERVICE_PASSWORD: "${AUTH_SERVICE_WEB_PASSWORD}"
+    volumes:
+      - ./config/orthanc-shares/orthanc.json:/etc/orthanc/orthanc.json:ro
+      - orthanc-storage:/var/lib/orthanc/db   # shared storage with main instance
+    depends_on:
+      - orthanc-auth-service
+
+  # ── Auth service (token issue + validation) ────────────────────────────────
+  orthanc-auth-service:
+    image: orthancteam/orthanc-auth-service:current
+    restart: unless-stopped
+    # No published ports — internal only
+    environment:
+      SECRET_KEY: "${AUTH_SERVICE_SECRET_KEY}"
+      # HTTP Basic Auth that Orthanc uses when calling auth-service
+      USERS: |
+        {"${AUTH_SERVICE_WEB_USER}": "${AUTH_SERVICE_WEB_PASSWORD}"}
+      # Public roots used when constructing share link URLs
+      PUBLIC_ORTHANC_ROOT: "${PUBLIC_ORTHANC_ROOT}"
+      PUBLIC_LANDING_ROOT: "${PUBLIC_LANDING_ROOT}"
+      PUBLIC_OHIF_ROOT: "${PUBLIC_OHIF_ROOT}"
+    volumes:
+      - ./config/auth-service/permissions.json:/orthanc_auth_service/permissions.json:ro
+
+
+volumes:
+  orthanc-storage:
+  certbot-www:
+  certbot-conf:

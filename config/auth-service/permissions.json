@@ -1,0 +1,31 @@
+{
+  "roles": {
+    "admin": {
+      "authorized-labels": ["*"],
+      "permissions": [
+        "all"
+      ]
+    },
+    "doctor": {
+      "authorized-labels": ["*"],
+      "permissions": [
+        "view",
+        "download",
+        "share"
+      ]
+    },
+    "share-recipient": {
+      "authorized-labels": ["*"],
+      "permissions": [
+        "view"
+      ]
+    }
+  },
+  "available-tokens": {
+    "ohif-viewer-publication": {
+      "type": "ohif-viewer-publication",
+      "min-validity": 0,
+      "max-validity": 525600
+    }
+  }
+}
